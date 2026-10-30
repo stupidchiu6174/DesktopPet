@@ -2,6 +2,8 @@
 
 ## 做法
 
+> 懶得自己換【OUTFIT】的話,`tools/pet/prompts/<衣服>.md` 是每套已經填好、照順序貼的完整版。
+
 1. 開一個新的 ChatGPT 對話,**先上傳參考圖**(角色長相以它為準):
    - 魔女裝:`tools/pet/base/witch.png`
    - 旗袍:`tools/pet/base/qipao.png`
