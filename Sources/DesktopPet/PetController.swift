@@ -30,7 +30,8 @@ public final class PetController {
         case sitting(until: TimeInterval)
         case falling(velocity: CGFloat)
         case held
-        case sleeping
+        /// manual:從選單叫她睡的,要點她才醒;放著電腦睡著的,你一回來就醒
+        case sleeping(manual: Bool)
         case dancing
         case reacting(PetPose, until: TimeInterval)
     }
@@ -222,13 +223,18 @@ public final class PetController {
         if model.pose == .stand, blink.isClosed(at: t) { model.pose = .blink }
 
         // 呼吸 / 落地壓扁慢慢回彈
-        let breathe: CGFloat = life == .sleeping ? 0.02 : 0.008
+        let breathe: CGFloat = isSleeping ? 0.02 : 0.008
         let target = 1 + breathe * CGFloat(sin(t * 2.2))
         model.squash += (target - model.squash) * min(1, 10 * CGFloat(dt))
 
         place()
         updateClickThrough()
         setRate(isActive ? 30 : 12)
+    }
+
+    private var isSleeping: Bool {
+        if case .sleeping = life { return true }
+        return false
     }
 
     private var isActive: Bool {
@@ -246,15 +252,15 @@ public final class PetController {
         default: break
         }
         let idleSeconds = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
-        if life == .sleeping {
-            if idleSeconds < 1.5 {
+        if case .sleeping(let manual) = life {
+            if !manual, idleSeconds < 1.5 {
                 life = .reacting(.surprised, until: t + 1.2)
                 say("…啊,你回來了")
             }
             return
         }
         if idleSeconds > 300 {
-            life = .sleeping
+            life = .sleeping(manual: false)
             return
         }
         let playing = isMusicPlaying()
@@ -503,7 +509,7 @@ public final class PetController {
             setOutfit(all[(all.firstIndex(of: model.outfit)! + 1) % all.count])
             return
         }
-        if life == .sleeping {
+        if isSleeping {
             life = .reacting(.surprised, until: now + 1.2)
             say("嗯…?我沒有在睡喔")
             return
@@ -534,7 +540,7 @@ public final class PetController {
         })
         menu.addItem(PetMenuItem(title: "去睡覺") {
             let c = PetController.shared
-            c.life = .sleeping
+            c.life = .sleeping(manual: true)
             c.say("晚安～", for: 2)
         })
         menu.addItem(.separator())
